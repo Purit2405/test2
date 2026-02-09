@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Kaewfa Coffee</string>
+    <string name="create_account">สร้างบัญชีใหม่</string>
+    <string name="quick_create_description">สร้างบัญชีของคุณอย่างรวดเร็ว</string>
+
+    <string name="hint_email">ที่อยู่อีเมล</string>
+    <string name="hint_phone">เบอร์โทรศัพท์</string>
+    <string name="hint_password">รหัสผ่าน</string>
+
+    <string name="sign_up">สมัครสมาชิก</string>
+    <string name="already_have_account">มีบัญชีอยู่แล้วใช่ไหม?</string>
+
+    <string name="welcome_back">ยินดีต้อนรับกลับมา!</string>
+    <string name="sign_in_subtitle">เข้าสู่ระบบบัญชีของคุณ</string>
+
+    <string name="email_address">ที่อยู่อีเมล</string>
+    <string name="password">รหัสผ่าน</string>
+    <string name="show_password">แสดงหรือซ่อนรหัสผ่าน</string>
+
+    <string name="remember_me">จดจำฉัน</string>
+    <string name="forgot_password">ลืมรหัสผ่าน?</string>
+
+    <string name="login">เข้าสู่ระบบ</string>
+    <string name="no_account">ยังไม่มีบัญชีใช่ไหม?</string>
+
+    <string name="toggle_password">สลับการมองเห็นรหัสผ่าน</string>
+    <string name="get_started">เริ่มต้นใช้งาน</string>
+    <string name="full_name">ชื่อ-นามสกุล</string>
+    <string name="confirm_password">ยืนยันรหัสผ่านอีกครั้ง</string>
+</resources>
