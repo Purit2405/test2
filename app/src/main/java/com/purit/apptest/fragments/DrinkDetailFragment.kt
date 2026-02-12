@@ -6,9 +6,10 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import com.bumptech.glide.Glide // เปลี่ยนมาใช้ Glide ให้เหมือน Adapter
+import com.bumptech.glide.Glide
 import com.purit.apptest.R
 import com.purit.apptest.api.RetrofitClient
+import com.purit.apptest.data.SessionManager // เพิ่มตัวจัดการ Session
 import com.purit.apptest.databinding.ProductDetailBinding
 import com.purit.apptest.models.ProductItem
 import retrofit2.Call
@@ -19,12 +20,16 @@ class DrinkDetailFragment : Fragment(R.layout.product_detail) {
 
     private var _binding: ProductDetailBinding? = null
     private val binding get() = _binding!!
+    private lateinit var sessionManager: SessionManager // ประกาศ SessionManager
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = ProductDetailBinding.bind(view)
 
-        // 1. แก้การดึงข้อมูล Parcelable ให้รองรับ Android 13+ (ป้องกันค่าเป็น null)
+        // เตรียมตัวจัดการ Session (เพื่อดึง Token)
+        sessionManager = SessionManager(requireContext())
+
+        // 1. ดึงข้อมูลสินค้า
         val product = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arguments?.getParcelable("product_data", ProductItem::class.java)
         } else {
@@ -32,7 +37,6 @@ class DrinkDetailFragment : Fragment(R.layout.product_detail) {
             arguments?.getParcelable<ProductItem>("product_data")
         }
 
-        // 2. ตรวจสอบว่ามีข้อมูลส่งมาจริงไหม
         if (product != null) {
             displayProductDetails(product)
         } else {
@@ -47,14 +51,12 @@ class DrinkDetailFragment : Fragment(R.layout.product_detail) {
             detailDescription.text = product.description ?: "ไม่มีคำอธิบาย"
             drinkType.text = product.category?.name ?: ""
 
-            // 3. เปลี่ยนมาใช้ Glide (เหมือนใน ProductAdapter) เพื่อความชัวร์
             Glide.with(requireContext())
                 .load(product.image)
-                .placeholder(R.drawable.iced_latte) // ใส่รูป Default เผื่อโหลดไม่ขึ้น
-                .error(R.drawable.iced_latte)      // ใส่รูป Error
+                .placeholder(R.drawable.iced_latte)
+                .error(R.drawable.iced_latte)
                 .into(detailImage)
 
-            // เช็คเงื่อนไขการแลกแต้ม
             if (product.redeemable && product.points_required > 0) {
                 layoutRedeemAvailable.visibility = View.VISIBLE
                 tvRedeemUnavailable.visibility = View.GONE
@@ -76,11 +78,28 @@ class DrinkDetailFragment : Fragment(R.layout.product_detail) {
             .show()
     }
 
+    /**
+     * แก้ไขการเรียก API: แนบ Bearer Token เข้าไปใน Header
+     */
     private fun redeemApi(productId: Int) {
-        RetrofitClient.instance.redeemProduct(productId).enqueue(object : Callback<Void> {
+        // 1. ดึง Token จาก Session
+        val token = sessionManager.getToken()
+        if (token == null) {
+            Toast.makeText(context, "กรุณาเข้าสู่ระบบใหม่", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 2. สร้าง Auth Header (ต้องเป็นคำว่า Bearer นำหน้า)
+        val authHeader = "Bearer $token"
+
+        // 3. ส่งข้อมูล 2 ค่า (token และ productId) ตามที่ระบุไว้ใน ApiService
+        RetrofitClient.instance.redeemProduct(authHeader, productId).enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                 if (response.isSuccessful) {
                     Toast.makeText(context, "แลกสินค้าสำเร็จ!", Toast.LENGTH_SHORT).show()
+                    // อาจจะส่งกลับไปหน้าประวัติ หรือหน้าหลัก
+                } else if (response.code() == 401) {
+                    Toast.makeText(context, "เซสชันหมดอายุ กรุณา Login ใหม่", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(context, "แต้มไม่เพียงพอ หรือระบบขัดข้อง", Toast.LENGTH_SHORT).show()
                 }

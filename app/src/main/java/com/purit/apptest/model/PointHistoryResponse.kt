@@ -1,33 +1,30 @@
 package com.purit.apptest.models
-import com.google.gson.annotations.SerializedName
 
-// --- สำหรับ User Profile ---
-data class UserResponse(
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("data") val data: UserData
-)
-data class UserData(val id: Int, val name: String, val phone: String)
-
-// --- สำหรับยอดแต้มคงเหลือ (Wallet) ---
-data class WalletResponse(
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("data") val data: WalletBalance
-)
-data class WalletBalance(val balance: Int)
-
-// --- สำหรับประวัติ (History) รองรับ Laravel Paginate ---
+// ชั้นนอกสุดของ API
 data class PointHistoryResponse(
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("data") val pagination: PointPagination
+    val success: Boolean,
+    val data: PointPaginationData
 )
-data class PointPagination(
-    @SerializedName("data") val transactions: List<PointTransaction>
+
+// ชั้นที่เก็บข้อมูล Pagination และรายการข้อมูล
+data class PointPaginationData(
+    val current_page: Int,
+    val data: List<PointTransactionItem>, // รายการประวัติจะอยู่ในนี้
+    val total: Int,
+    val last_page: Int,
+    val per_page: Int,
+    val next_page_url: String?,
+    val prev_page_url: String?
 )
-data class PointTransaction(
+
+// ข้อมูลแต่ละรายการ
+data class PointTransactionItem(
     val id: Int,
-    val type: String,
-    val points: Int,
+    val type: String,        // reward | redeem
+    val points: Int,         // มาเป็นตัวเลข เช่น 5000 หรือ -100
     val description: String?,
-    @SerializedName("source_name") val source_name: String?,
-    @SerializedName("created_at") val created_at: String
+    val source_type: String?,
+    val source_id: Int?,
+    val source_name: String,
+    val created_at: String
 )

@@ -33,7 +33,7 @@ class CategoryAdapter(
         holder.tvCategoryName.text = category.name
 
         // 1. ตั้งค่า Base URL (⚠️ แก้ IP ให้ตรงกับเครื่องที่รัน Laravel ของคุณ)
-        val baseUrl = "http://192.168.1.100:8000"
+        val baseUrl = "172.16.200.33:8000"
 
         // 2. จัดการ Path รูปภาพ (รวม Base URL เข้ากับ Path จาก API)
         val iconPath = category.icon ?: ""

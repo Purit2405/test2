@@ -24,58 +24,56 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 1. ตั้งค่า ViewBinding
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         sessionManager = SessionManager(this)
 
-        // 2. เช็คว่าถ้า Login ค้างไว้อยู่แล้ว (และยังไม่หมดอายุ) ให้ไปหน้าหลักเลย
         if (sessionManager.isLoggedIn()) {
             startMainActivity()
+            return
         }
 
         setupListeners()
     }
 
     private fun setupListeners() {
-        // ปุ่มสลับการมองเห็นรหัสผ่าน
+
         binding.ivTogglePassword.setOnClickListener {
             togglePasswordVisibility()
         }
 
-        // ปุ่มเข้าสู่ระบบ
         binding.btnLogin.setOnClickListener {
             performLogin()
         }
 
-        // ไปหน้าสมัครสมาชิก (ID: btnCreate)
         binding.btnCreate.setOnClickListener {
-            val intent = Intent(this, RegisterActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, RegisterActivity::class.java))
         }
 
-        // >>> เชื่อมไปหน้าลืมรหัสผ่าน (ID: tvForgotPassword) <<<
         binding.tvForgotPassword.setOnClickListener {
-            val intent = Intent(this, ForgotPasswordActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
     }
 
     private fun togglePasswordVisibility() {
         if (isPasswordVisible) {
-            binding.etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            binding.etPassword.inputType =
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             binding.ivTogglePassword.setImageResource(R.drawable.ic_hide)
         } else {
-            binding.etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            binding.etPassword.inputType =
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             binding.ivTogglePassword.setImageResource(R.drawable.ic_show)
         }
+
         isPasswordVisible = !isPasswordVisible
-        // ให้เคอร์เซอร์อยู่ท้ายข้อความเสมอหลังเปลี่ยน InputType
         binding.etPassword.setSelection(binding.etPassword.text.length)
     }
 
     private fun performLogin() {
+
         val email = binding.etEmail.text.toString().trim()
         val password = binding.etPassword.text.toString().trim()
         val rememberMe = binding.rememberMeSwitch.isChecked
@@ -88,52 +86,81 @@ class LoginActivity : AppCompatActivity() {
         binding.btnLogin.isEnabled = false
         binding.btnLogin.text = "กำลังตรวจสอบ..."
 
-        val loginParams = mutableMapOf<String, Any>()
+        val loginParams = HashMap<String, Any>()
         loginParams["email"] = email
         loginParams["password"] = password
         loginParams["remember_me"] = rememberMe
 
-        RetrofitClient.instance.login(loginParams).enqueue(object : Callback<LoginResponse> {
-            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                binding.btnLogin.isEnabled = true
-                binding.btnLogin.text = "เข้าสู่ระบบ"
+        RetrofitClient.instance.login(loginParams)
+            .enqueue(object : Callback<LoginResponse> {
 
-                if (response.isSuccessful && response.body() != null) {
-                    val loginRes = response.body()!!
+                override fun onResponse(
+                    call: Call<LoginResponse>,
+                    response: Response<LoginResponse>
+                ) {
 
-                    if (loginRes.success) {
-                        // บันทึก Session: ถ้าเลือก 'จดจำฉัน' จะอยู่ได้ 1 ปี (365 วัน)
-                        val expiryMillis = if (rememberMe) {
-                            System.currentTimeMillis() + TimeUnit.DAYS.toMillis(365)
+                    binding.btnLogin.isEnabled = true
+                    binding.btnLogin.text = "เข้าสู่ระบบ"
+
+                    if (response.isSuccessful && response.body() != null) {
+
+                        val loginRes = response.body()!!
+
+                        if (loginRes.success && loginRes.data != null) {
+
+                            val token = loginRes.data.token
+
+                            val expiryMillis = if (rememberMe) {
+                                System.currentTimeMillis() + TimeUnit.DAYS.toMillis(365)
+                            } else {
+                                System.currentTimeMillis() + TimeUnit.DAYS.toMillis(30)
+                            }
+
+                            sessionManager.saveAuthToken(token, expiryMillis)
+
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "เข้าสู่ระบบสำเร็จ",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            startMainActivity()
+
                         } else {
-                            System.currentTimeMillis() + TimeUnit.DAYS.toMillis(30)
+                            Toast.makeText(
+                                this@LoginActivity,
+                                loginRes.message ?: "เข้าสู่ระบบไม่สำเร็จ",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
 
-                        val token = loginRes.data?.token ?: ""
-                        sessionManager.saveAuthToken(token, expiryMillis)
-
-                        Toast.makeText(applicationContext, "เข้าสู่ระบบสำเร็จ", Toast.LENGTH_SHORT).show()
-                        startMainActivity()
                     } else {
-                        Toast.makeText(this@LoginActivity, loginRes.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@LoginActivity,
+                            "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-                } else {
-                    Toast.makeText(this@LoginActivity, "อีเมลหรือรหัสผ่านไม่ถูกต้อง", Toast.LENGTH_SHORT).show()
                 }
-            }
 
-            override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                binding.btnLogin.isEnabled = true
-                binding.btnLogin.text = "เข้าสู่ระบบ"
-                Toast.makeText(this@LoginActivity, "เชื่อมต่อไม่ได้: ${t.localizedMessage}", Toast.LENGTH_SHORT).show()
-            }
-        })
+                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+
+                    binding.btnLogin.isEnabled = true
+                    binding.btnLogin.text = "เข้าสู่ระบบ"
+
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "เชื่อมต่อขัดข้อง: ${t.localizedMessage}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
     }
 
     private fun startMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
-        // ป้องกันการกดย้อนกลับมาหน้า Login
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
     }

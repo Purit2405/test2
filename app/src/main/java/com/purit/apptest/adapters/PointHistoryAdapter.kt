@@ -6,40 +6,47 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.purit.apptest.models.PointTransaction
+import com.purit.apptest.R
+import com.purit.apptest.models.PointTransactionItem
 
-class PointHistoryAdapter(private val list: List<PointTransaction>) :
-    RecyclerView.Adapter<PointHistoryAdapter.ViewHolder>() {
+class PointHistoryAdapter(
+    private val historyList: MutableList<PointTransactionItem>
+) : RecyclerView.Adapter<PointHistoryAdapter.HistoryViewHolder>() {
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val tvDesc: TextView = view.findViewById(android.R.id.text1)
-        val tvDate: TextView = view.findViewById(android.R.id.text2)
+    class HistoryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvDesc: TextView = view.findViewById(R.id.tv_item_description)
+        val tvDate: TextView = view.findViewById(R.id.tv_item_date)
+        val tvPoints: TextView = view.findViewById(R.id.tv_item_points)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(android.R.layout.simple_list_item_2, parent, false)
-        return ViewHolder(view)
+            .inflate(R.layout.item_point_history, parent, false)
+        return HistoryViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = list[position]
-        val displayTitle = if (!item.source_name.isNullOrBlank() && item.source_name != "-") {
-            item.source_name
-        } else {
-            item.description ?: "รายการทั่วไป"
-        }
+    override fun onBindViewHolder(holder: HistoryViewHolder, position: Int) {
+        val item = historyList[position]
 
-        val prefix = if (item.points > 0) "+" else ""
-        holder.tvDesc.text = "$displayTitle ($prefix${item.points} pts)"
-
-        if (item.points > 0) {
-            holder.tvDesc.setTextColor(Color.parseColor("#4CAF50"))
-        } else {
-            holder.tvDesc.setTextColor(Color.parseColor("#F44336"))
-        }
+        holder.tvDesc.text = item.description ?: item.source_name
         holder.tvDate.text = item.created_at
+
+        val isEarn = item.type == "reward"
+
+        if (isEarn) {
+            holder.tvPoints.text = "+${item.points} pts"
+            holder.tvPoints.setTextColor(Color.parseColor("#4CAF50"))
+        } else {
+            holder.tvPoints.text = "${item.points} pts"
+            holder.tvPoints.setTextColor(Color.parseColor("#FF4E50"))
+        }
     }
 
-    override fun getItemCount(): Int = list.size
+    override fun getItemCount(): Int = historyList.size
+
+    fun updateData(newList: List<PointTransactionItem>) {
+        historyList.clear()
+        historyList.addAll(newList)
+        notifyDataSetChanged()
+    }
 }

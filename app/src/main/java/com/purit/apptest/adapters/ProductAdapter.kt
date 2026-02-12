@@ -11,7 +11,6 @@ import com.bumptech.glide.Glide
 import com.purit.apptest.R
 import com.purit.apptest.models.ProductItem
 
-// เพิ่ม parameter onItemClick เข้าไปใน Constructor
 class ProductAdapter(
     private val productList: List<ProductItem>,
     private val onItemClick: (ProductItem) -> Unit
@@ -34,16 +33,16 @@ class ProductAdapter(
     override fun onBindViewHolder(holder: ProductViewHolder, position: Int) {
         val product = productList[position]
 
-        // 1. ตั้งค่าข้อมูลพื้นฐาน
         holder.tvName.text = product.name
         holder.tvPrice.text = "${product.price.toInt()} ฿"
 
+        // โหลดรูปภาพจาก URL เต็มที่ส่งมาจาก Laravel asset()
         Glide.with(holder.itemView.context)
-            .load(product.image)
+            .load(product.image) // เช่น http://172.16.200.33:8000/storage/products/1.jpg
             .placeholder(R.drawable.iced_latte)
+            .error(R.drawable.ic_launcher_background)
             .into(holder.imgDrink)
 
-        // 2. เงื่อนไขเช็คการแลกแต้ม (Redeemable)
         if (product.redeemable) {
             holder.tvPointsBadge.visibility = View.VISIBLE
             holder.tvPointsBadge.text = "${product.points_required} Pts"
@@ -55,9 +54,8 @@ class ProductAdapter(
             holder.tvRedeemStatus.setTextColor(Color.parseColor("#757575"))
         }
 
-        // --- ส่วนสำคัญ: ดักจับการคลิกที่ Item ---
         holder.itemView.setOnClickListener {
-            onItemClick(product) // ส่งข้อมูล product กลับไปที่ HomeFragment
+            onItemClick(product)
         }
     }
 

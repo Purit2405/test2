@@ -1,107 +1,120 @@
 package com.purit.apptest.fragments
 
 import android.os.Bundle
-import android.util.Log
-import android.view.*
-import android.widget.*
+import android.view.View
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.purit.apptest.R
 import com.purit.apptest.adapters.PointHistoryAdapter
 import com.purit.apptest.api.RetrofitClient
 import com.purit.apptest.data.SessionManager
-import com.purit.apptest.models.*
+import com.purit.apptest.models.PointHistoryResponse
+import com.purit.apptest.models.PointResponse
+import com.purit.apptest.models.UserProfileResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import com.purit.apptest.fragments.PointFragment
 
-class PointFragment : Fragment() {
+class PointFragment : Fragment(R.layout.fragment_point) {
 
     private lateinit var tvName: TextView
-    private lateinit var tvBalance: TextView
-    private lateinit var rvHistory: RecyclerView
+    private lateinit var tvPhone: TextView
+    private lateinit var tvPoints: TextView
+    private lateinit var recyclerHistory: RecyclerView
+    private lateinit var btnRedeem: MaterialButton
+
     private lateinit var sessionManager: SessionManager
-    private var historyList = mutableListOf<PointTransaction>()
-    private lateinit var adapter: PointHistoryAdapter
+    private lateinit var historyAdapter: PointHistoryAdapter
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.fragment_point, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        initViews(view)
-
-        val token = sessionManager.getToken()
-        if (!token.isNullOrEmpty()) {
-            val authHeader = "Bearer $token"
-            loadAllData(authHeader)
-        } else {
-            Toast.makeText(context, "กรุณาเข้าสู่ระบบใหม่", Toast.LENGTH_SHORT).show()
-        }
-
-        return view
-    }
-
-    private fun initViews(view: View) {
-        sessionManager = SessionManager(requireContext())
+        // 1. ผูก View (ตรวจสอบ ID ใน XML ให้ตรงกัน)
         tvName = view.findViewById(R.id.textView_name)
-        tvBalance = view.findViewById(R.id.text_points)
-        rvHistory = view.findViewById(R.id.recycler_history)
-        val btnRedeem = view.findViewById<Button>(R.id.btnRedeem)
+        tvPhone = view.findViewById(R.id.textView_phone)
+        tvPoints = view.findViewById(R.id.text_points)
+        recyclerHistory = view.findViewById(R.id.recycler_history)
+        btnRedeem = view.findViewById(R.id.btnRedeem)
 
-        rvHistory.layoutManager = LinearLayoutManager(context)
-        adapter = PointHistoryAdapter(historyList)
-        rvHistory.adapter = adapter
+        sessionManager = SessionManager(requireContext())
 
+        // 2. ตั้งค่า RecyclerView
+        historyAdapter = PointHistoryAdapter(mutableListOf())
+        recyclerHistory.layoutManager = LinearLayoutManager(requireContext())
+        recyclerHistory.adapter = historyAdapter
+
+        // 3. คลิกปุ่ม Exchange (Exchange -> PromotionFragment)
         btnRedeem.setOnClickListener {
-            // ป้องกัน Error หากยังไม่มี PromotionFragment ให้เช็คชื่อ Class ให้ตรง
-            try {
-                parentFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, PromotionFragment())
-                    .addToBackStack(null).commit()
-            } catch (e: Exception) {
-                Toast.makeText(context, "หน้าแลกแต้มกำลังพัฒนา", Toast.LENGTH_SHORT).show()
-            }
+            val promotionFragment = PromotionFragment()
+
+            // ใช้ parentFragmentManager และตรวจสอบ ID fragment_container ใน activity_main.xml
+            parentFragmentManager.beginTransaction()
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+                .replace(R.id.fragment_container, promotionFragment)
+                .addToBackStack(null) // เพื่อให้กด Back กลับมาหน้า Point ได้
+                .commit()
+        }
+
+        // 4. โหลดข้อมูลจาก API
+        if (sessionManager.isLoggedIn()) {
+            loadUserProfile()
+            loadWallet()
+            loadHistory()
+        } else {
+            Toast.makeText(requireContext(), "กรุณาเข้าสู่ระบบ", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun loadAllData(token: String) {
-        // 1. ดึงชื่อและเบอร์
-        RetrofitClient.instance.getUserProfile(token).enqueue(object : Callback<UserResponse> {
-            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
-                if (response.isSuccessful) {
-                    val user = response.body()?.data
-                    tvName.text = "${user?.name} ID ${user?.phone}"
-                }
-            }
-            override fun onFailure(call: Call<UserResponse>, t: Throwable) {}
-        })
+    private fun loadUserProfile() {
+        val token = sessionManager.fetchAuthToken() ?: return
+        val authHeader = "Bearer $token"
 
-        // 2. ดึงยอดแต้มคงเหลือ
-        RetrofitClient.instance.getWallet(token).enqueue(object : Callback<WalletResponse> {
-            override fun onResponse(call: Call<WalletResponse>, response: Response<WalletResponse>) {
-                if (response.isSuccessful) {
-                    val balance = response.body()?.data?.balance ?: 0
-                    tvBalance.text = String.format("%,d", balance)
+        RetrofitClient.instance.getUserProfile(authHeader)
+            .enqueue(object : Callback<UserProfileResponse> {
+                override fun onResponse(call: Call<UserProfileResponse>, response: Response<UserProfileResponse>) {
+                    if (isAdded && response.isSuccessful) {
+                        val user = response.body()?.data
+                        tvName.text = user?.name ?: "ไม่พบชื่อ"
+                        tvPhone.text = user?.phone ?: "ไม่พบเบอร์"
+                    }
                 }
-            }
-            override fun onFailure(call: Call<WalletResponse>, t: Throwable) {}
-        })
+                override fun onFailure(call: Call<UserProfileResponse>, t: Throwable) {}
+            })
+    }
 
-        // 3. ดึงประวัติแต้ม (จุดที่เคย Error)
-        RetrofitClient.instance.getPointHistory(token).enqueue(object : Callback<PointHistoryResponse> {
-            override fun onResponse(call: Call<PointHistoryResponse>, response: Response<PointHistoryResponse>) {
-                if (response.isSuccessful) {
-                    // ดึงจาก pagination -> transactions
-                    val data = response.body()?.data?.pagination?.transactions ?: emptyList()
-                    historyList.clear()
-                    historyList.addAll(data)
-                    adapter.notifyDataSetChanged()
+    private fun loadWallet() {
+        val token = sessionManager.fetchAuthToken() ?: return
+        val authHeader = "Bearer $token"
+
+        RetrofitClient.instance.getWalletBalance(authHeader)
+            .enqueue(object : Callback<PointResponse> {
+                override fun onResponse(call: Call<PointResponse>, response: Response<PointResponse>) {
+                    if (isAdded && response.isSuccessful) {
+                        val balance = response.body()?.data?.balance ?: 0
+                        tvPoints.text = String.format("%,d", balance)
+                    }
                 }
-            }
-            override fun onFailure(call: Call<PointHistoryResponse>, t: Throwable) {
-                Log.e("API", "History Fail: ${t.message}")
-            }
-        })
+                override fun onFailure(call: Call<PointResponse>, t: Throwable) {}
+            })
+    }
+
+    private fun loadHistory() {
+        val token = sessionManager.fetchAuthToken() ?: return
+        val authHeader = "Bearer $token"
+
+        RetrofitClient.instance.getPointHistory(authHeader)
+            .enqueue(object : Callback<PointHistoryResponse> {
+                override fun onResponse(call: Call<PointHistoryResponse>, response: Response<PointHistoryResponse>) {
+                    if (isAdded && response.isSuccessful) {
+                        val historyList = response.body()?.data?.data ?: emptyList()
+                        historyAdapter.updateData(historyList)
+                    }
+                }
+                override fun onFailure(call: Call<PointHistoryResponse>, t: Throwable) {}
+            })
     }
 }

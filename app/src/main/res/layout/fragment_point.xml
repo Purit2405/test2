@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FDFDFD"
+    android:orientation="vertical"
     android:padding="24dp">
 
     <TextView
@@ -14,67 +13,52 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Kaewfa ID 088-888-8888"
-        android:textSize="20sp"
         android:fontFamily="sans-serif-medium"
+        android:text="Loading..."
         android:textColor="#2D3436"
-        android:letterSpacing="-0.02"/>
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/textView_phone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="0xx-xxx-xxxx"
+        android:textColor="#636E72"
+        android:textSize="14sp" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="180dp"
         android:layout_marginTop="24dp"
         app:cardCornerRadius="24dp"
-        app:cardElevation="12dp"
-        app:cardMaxElevation="15dp">
+        app:cardElevation="8dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@drawable/points_bg"
+            android:background="#FAB71F"
             android:padding="24dp">
 
             <TextView
                 android:id="@+id/label_points"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CURRENT BALANCE"
                 android:alpha="0.8"
+                android:text="CURRENT BALANCE"
                 android:textColor="@color/white"
                 android:textSize="12sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.1"/>
+                android:textStyle="bold" />
 
-            <LinearLayout
-                android:id="@+id/points_container"
+            <TextView
+                android:id="@+id/text_points"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/label_points"
-                android:layout_marginTop="4dp"
-                android:gravity="bottom"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/text_points"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="2,000"
-                    android:textSize="52sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/white"
-                    android:includeFontPadding="false"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginBottom="10dp"
-                    android:text="pts"
-                    android:textColor="@color/white"
-                    android:textSize="18sp"
-                    android:alpha="0.9"
-                    android:fontFamily="sans-serif-light"/>
-            </LinearLayout>
+                android:text="0"
+                android:textColor="@color/white"
+                android:textSize="52sp"
+                android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRedeem"
@@ -85,51 +69,25 @@
                 android:layout_alignParentBottom="true"
                 android:text="Exchange"
                 android:textColor="#FF4E50"
-                android:textAllCaps="false"
-                android:textStyle="bold"
                 app:backgroundTint="#FFFFFF"
-                app:cornerRadius="16dp"
-                app:rippleColor="#F1F2F6"/>
-
+                app:cornerRadius="16dp" />
         </RelativeLayout>
     </androidx.cardview.widget.CardView>
 
-    <RelativeLayout
-        android:layout_width="match_parent"
+
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:layout_marginBottom="12dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Transaction History"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#2D3436"/>
-
-        <TextView
-            android:id="@+id/tv_view_all"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:text="View All"
-            android:textColor="#FF9F43"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="4dp"/>
-    </RelativeLayout>
+        android:layout_marginTop="32dp"
+        android:text="History"
+        android:textColor="#2D3436"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_history"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingBottom="16dp"
-        android:scrollbars="none"
-        tools:listitem="@android:layout/simple_list_item_2"/>
+        android:layout_height="match_parent"
+        android:layout_marginTop="8dp" />
 
 </LinearLayout>
